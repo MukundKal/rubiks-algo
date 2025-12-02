@@ -1,0 +1,42 @@
+{
+  "document_title": "RUBIKS LAYER",
+  "steps": [
+    {
+      "id": "1",
+      "instruction": "flip edge",
+      "algorithm": "F U` R U"
+    },
+    {
+      "instruction": "move edge to down (right)",
+      "algorithms": "U R U` R` U` F` U F"
+    },
+    {
+      "instruction": "move edge to down (left)",
+      "algorithm": "U' L` U L U F U` F`"
+    },
+    {
+      "instruction": "reset in the case wrong edge orientation",
+      "algorithm": "U R U` R` U` F` U F U2"
+    },
+    {
+      "instruction": "Move to top Yellow Cross",
+      "algorithm": "F R U R` U` F`"
+    },
+    {
+      "instruction": "Swap front top / left top edges to match edges w/ centres",
+      "algorithm": "R U R` U R U2 R` U",
+      "note": "at this point Yellow cross edges match with all side centres"
+    },
+    {
+      "instruction": "position yellow corners in correct places",
+      "count": "x N",
+      "algorithm": "U R U` L` U R` U` L"
+    },
+    {
+      "instruction": "Orient yellow corners to solve once the corners are in place",
+      "count": "x N",
+      "algorithm": "R` D` R D",
+      "notes": ["Pick one corner and keep repeating same algo till solved"]
+    }
+  ]
+}
