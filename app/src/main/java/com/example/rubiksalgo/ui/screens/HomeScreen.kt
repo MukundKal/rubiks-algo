@@ -16,6 +16,7 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -53,6 +54,11 @@ fun HomeScreen() {
     var showBezelFeedback by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
+    val currentView = LocalView.current
+    DisposableEffect(Unit) {
+        currentView.keepScreenOn = true
+        onDispose { currentView.keepScreenOn = false }
+    }
     // Request focus when screen loads (CRITICAL for bezel to work)
     LaunchedEffect(Unit) {
         delay(100) // Small delay to ensure pager is ready

@@ -1,5 +1,8 @@
-<?xml version="1.0" encoding="utf-8"?>
+<?xml version="1.0" encoding="utf-8" ?>
 <resources>
-
-    <style name="Theme.RubiksAlgo" parent="android:Theme.Material.Light.NoActionBar" />
+    <!-- Changed parent from Light to DeviceDefault (Dark) -->
+    <style name="Theme.RubiksAlgo" parent="android:Theme.DeviceDefault">
+        <!-- Ensures the splash screen is pitch black -->
+        <item name="android:windowBackground">@android:color/black</item>
+    </style>
 </resources>
