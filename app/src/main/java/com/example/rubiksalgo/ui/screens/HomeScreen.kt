@@ -6,6 +6,7 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
+import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
@@ -118,8 +119,14 @@ fun HomeScreen() {
                                                 scrollableState = pagerState,
                                                 focusRequester = focusRequester
                                         ),
-                        pageSpacing = 4.dp,
-                        contentPadding = PaddingValues(horizontal = 2.dp)
+                        pageSpacing = 0.dp,
+                        contentPadding = PaddingValues(0.dp),
+                        flingBehavior =
+                                PagerDefaults.flingBehavior(
+                                        state = pagerState,
+                                        snapPositionalThreshold =
+                                                0.2f // Snap when 20% of page visible
+                                )
                 ) { page -> RubiksCard(step = steps[page]) }
             }
 
