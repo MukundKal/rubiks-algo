@@ -8,10 +8,9 @@ echo "no" | ~/Library/Android/sdk/cmdline-tools/latest/bin/avdmanager create avd
   --device "wearos_large_round" \
   --tag "android-wear"
 
-
 ~/Library/Android/sdk/emulator/emulator -avd WearOS_Watch
 
 ./gradlew clean assembleDebug
 
 
-./gradlew installDebug && adb -s emulator-5554 shell am start -n com.example.rubiksalgo/.MainActivity
+export ANDROID_SERIAL=emulator-5554 && ./gradlew installDebug && adb -s emulator-5554 shell am start -n com.example.rubiksalgo/.MainActivity
