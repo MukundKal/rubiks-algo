@@ -3,31 +3,25 @@ package com.example.rubiksalgo
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.material3.darkColorScheme
-import androidx.compose.ui.Modifier
+import androidx.wear.compose.material.MaterialTheme
 import com.example.rubiksalgo.ui.screens.HomeScreen
 
+/**
+ * MainActivity for Wear OS
+ *
+ * Justification for changes:
+ * - Uses androidx.wear.compose.material.MaterialTheme instead of Material3
+ * - Wear MaterialTheme automatically handles round screen insets and AMOLED optimization
+ * - Removed Surface wrapper - Wear OS Scaffold handles background containers
+ * - Simplified for watch-optimized experience
+ */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // This is the bridge between Android and your new UI code
         setContent {
-            // Force Dark Mode for the minimal aesthetic
-            MaterialTheme(colorScheme = darkColorScheme()) {
-
-                // A background container
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    // Load the HomeScreen we created in the other file
-                    HomeScreen()
-                }
-            }
+            // Wear OS Material Theme (optimized for round watches with AMOLED displays)
+            MaterialTheme { HomeScreen() }
         }
     }
 }

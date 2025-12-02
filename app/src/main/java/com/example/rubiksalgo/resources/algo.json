@@ -16,7 +16,8 @@
     },
     {
       "instruction": "reset in the case wrong edge orientation",
-      "algorithm": "U R U` R` U` F` U F U2"
+      "algorithm": "U R U` R` U` F` U F U2",
+      "note": "at this point algo 2 or 3 can be used"
     },
     {
       "instruction": "Move to top Yellow Cross",

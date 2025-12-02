@@ -3,108 +3,109 @@ package com.example.rubiksalgo.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.automirrored.filled.ArrowForward
-import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusRequester
+import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.wear.compose.material.HorizontalPageIndicator
+import androidx.wear.compose.material.MaterialTheme
+import androidx.wear.compose.material.PageIndicatorState
+import androidx.wear.compose.material.Scaffold
+import androidx.wear.compose.material.Text
+import androidx.wear.compose.material.TimeText
+import androidx.wear.compose.material.Vignette
+import androidx.wear.compose.material.VignettePosition
 import com.example.rubiksalgo.data.RubiksRepository
 import com.example.rubiksalgo.ui.components.RubiksCard
-import kotlinx.coroutines.launch
+import com.google.android.horologist.annotations.ExperimentalHorologistApi
+import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
 
-@OptIn(ExperimentalMaterial3Api::class)
+/**
+ * HomeScreen for Wear OS with Rotary (Bezel) Navigation
+ *
+ * Key Changes for Wear OS:
+ * 1. Uses Wear Compose Scaffold with TimeText, Vignette, and HorizontalPageIndicator
+ * 2. Implements rotaryWithScroll() modifier to connect bezel rotation to HorizontalPager
+ * 3. Removed top app bar (too large for watch screens)
+ * 4. Removed navigation buttons (bezel provides better UX on watches)
+ * 5. Added compact page counter for minimal design
+ * 6. HorizontalPageIndicator shows page dots at bottom (Wear OS standard for pagers)
+ *
+ * Bezel Navigation:
+ * - Rotate bezel clockwise → Next step
+ * - Rotate bezel counter-clockwise → Previous step
+ * - Horologist's rotaryWithScroll handles velocity and fling behavior automatically
+ */
+@OptIn(ExperimentalHorologistApi::class)
 @Composable
 fun HomeScreen() {
     val steps = remember { RubiksRepository.getAllSteps() }
     val pagerState = rememberPagerState(pageCount = { steps.size })
-    val scope = rememberCoroutineScope() // Needed for button clicks to scroll pager
+    val focusRequester = remember { FocusRequester() }
 
     Scaffold(
-            topBar = {
-                CenterAlignedTopAppBar(
-                        title = {
-                            Text(
-                                    "RUBIK'S/LAYER-BY-LAYER",
-                                    fontWeight = FontWeight.Black,
-                                    letterSpacing = 1.sp
-                            )
-                        },
-                        colors =
-                                TopAppBarDefaults.centerAlignedTopAppBarColors(
-                                        containerColor = MaterialTheme.colorScheme.background,
-                                        titleContentColor = MaterialTheme.colorScheme.primary
-                                )
+            timeText = {
+                // TimeText shows clock at top
+                TimeText()
+            },
+            vignette = {
+                // Vignette provides edge fade effect for round screens
+                Vignette(vignettePosition = VignettePosition.TopAndBottom)
+            },
+            pageIndicator = {
+                // HorizontalPageIndicator shows page dots at bottom (standard for pagers)
+                HorizontalPageIndicator(
+                        pageIndicatorState =
+                                object : PageIndicatorState {
+                                    override val pageCount: Int
+                                        get() = steps.size
+                                    override val pageOffset: Float
+                                        get() = 0f
+                                    override val selectedPage: Int
+                                        get() = pagerState.currentPage
+                                }
                 )
             }
-    ) { innerPadding ->
+    ) {
         Column(
-                modifier = Modifier.fillMaxSize().padding(innerPadding),
-                horizontalAlignment = Alignment.CenterHorizontally,
-                verticalArrangement = Arrangement.SpaceBetween // Pushes content to edges
+                modifier = Modifier.fillMaxSize().padding(horizontal = 4.dp),
+                horizontalAlignment = Alignment.CenterHorizontally
         ) {
+            Spacer(modifier = Modifier.height(20.dp))
 
-            // 1. Progress Indicator (Visual bar instead of just text)
-            LinearProgressIndicator(
-                    progress = { (pagerState.currentPage + 1) / steps.size.toFloat() },
-                    modifier = Modifier.fillMaxWidth().padding(horizontal = 32.dp).height(4.dp),
-                    trackColor = MaterialTheme.colorScheme.surfaceVariant,
-                    color = MaterialTheme.colorScheme.primary
+            // Compact Page Counter
+            Text(
+                    text = "${pagerState.currentPage + 1}/${steps.size}",
+                    style = MaterialTheme.typography.caption1,
+                    fontWeight = FontWeight.Bold,
+                    textAlign = TextAlign.Center,
+                    color = MaterialTheme.colors.primary
             )
 
-            // 2. The Card Area
+            Spacer(modifier = Modifier.height(4.dp))
+
+            // HorizontalPager with Rotary (Bezel) Support
+            // 🔥 KEY FEATURE: rotaryWithScroll connects bezel rotation to pager navigation
             HorizontalPager(
                     state = pagerState,
-                    contentPadding = PaddingValues(horizontal = 24.dp), // Peek next card
-                    pageSpacing = 16.dp,
                     modifier =
-                            Modifier.weight(1f) // Takes up all available middle space
-                                    .padding(vertical = 24.dp)
+                            Modifier.weight(1f)
+                                    .fillMaxWidth()
+                                    // This modifier enables bezel navigation!
+                                    // When user rotates bezel, pager scrolls to next/previous page
+                                    .focusRequester(focusRequester)
+                                    .rotaryWithScroll(
+                                            scrollableState = pagerState,
+                                            focusRequester = focusRequester
+                                    ),
+                    pageSpacing = 4.dp,
+                    contentPadding = PaddingValues(horizontal = 2.dp)
             ) { page -> RubiksCard(step = steps[page]) }
-
-            // 3. Bottom Controls (Easier to tap than swipe)
-            Row(
-                    modifier =
-                            Modifier.fillMaxWidth()
-                                    .padding(bottom = 32.dp, start = 24.dp, end = 24.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-            ) {
-                // Back Button
-                FilledTonalIconButton(
-                        onClick = {
-                            scope.launch {
-                                pagerState.animateScrollToPage(pagerState.currentPage - 1)
-                            }
-                        },
-                        enabled = pagerState.currentPage > 0,
-                        modifier = Modifier.size(56.dp) // Large touch target
-                ) { Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Previous") }
-
-                // Step Counter Text
-                Text(
-                        text = "${pagerState.currentPage + 1} / ${steps.size}",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.Bold
-                )
-
-                // Next Button
-                FilledTonalIconButton(
-                        onClick = {
-                            scope.launch {
-                                pagerState.animateScrollToPage(pagerState.currentPage + 1)
-                            }
-                        },
-                        enabled = pagerState.currentPage < steps.size - 1,
-                        modifier = Modifier.size(56.dp)
-                ) { Icon(Icons.AutoMirrored.Filled.ArrowForward, contentDescription = "Next") }
-            }
         }
     }
 }
