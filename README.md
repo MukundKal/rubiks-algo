@@ -12,4 +12,5 @@
 
 **OLED Friendly:** Because I care about your 14-hour watch battery life.
 
-Built with Jetpack Compose because I like over-engineering simple problems.
+
+## TODO: fix the rotatory bezel snapping physics

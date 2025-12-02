@@ -6,7 +6,6 @@ import androidx.compose.animation.fadeOut
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.pager.HorizontalPager
-import androidx.compose.foundation.pager.PagerDefaults
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.runtime.*
@@ -16,7 +15,6 @@ import androidx.compose.ui.focus.FocusRequester
 import androidx.compose.ui.focus.focusRequester
 import androidx.compose.ui.focus.focusTarget
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalView
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -32,6 +30,7 @@ import com.example.rubiksalgo.data.RubiksRepository
 import com.example.rubiksalgo.ui.components.RubiksCard
 import com.google.android.horologist.annotations.ExperimentalHorologistApi
 import com.google.android.horologist.compose.rotaryinput.rotaryWithScroll
+import kotlin.math.roundToInt
 import kotlinx.coroutines.delay
 
 /**
@@ -39,7 +38,7 @@ import kotlinx.coroutines.delay
  *
  * Features:
  * - Dark mode optimized for AMOLED displays
- * - Physical bezel rotation support
+ * - Physical bezel rotation support with auto-snap
  * - Visual feedback when bezel is used
  * - Swipe gestures as fallback
  */
@@ -49,27 +48,54 @@ fun HomeScreen() {
     val steps = remember { RubiksRepository.getAllSteps() }
     val pagerState = rememberPagerState(pageCount = { steps.size })
     val focusRequester = remember { FocusRequester() }
-
-    // Track page changes to show bezel feedback
-    var showBezelFeedback by remember { mutableStateOf(false) }
     val scope = rememberCoroutineScope()
 
-    val currentView = LocalView.current
-    DisposableEffect(Unit) {
-        currentView.keepScreenOn = true
-        onDispose { currentView.keepScreenOn = false }
-    }
+    // Track bezel feedback
+    var showBezelFeedback by remember { mutableStateOf(false) }
+    var lastScrollTime by remember { mutableStateOf(0L) }
+
     // Request focus when screen loads (CRITICAL for bezel to work)
     LaunchedEffect(Unit) {
-        delay(100) // Small delay to ensure pager is ready
+        delay(100)
         focusRequester.requestFocus()
+    }
+
+    // Monitor scrolling and snap to nearest page when it settles
+    LaunchedEffect(pagerState.currentPage, pagerState.currentPageOffsetFraction) {
+        if (pagerState.currentPageOffsetFraction != 0f) {
+            lastScrollTime = System.currentTimeMillis()
+        }
+    }
+
+    // Snap to nearest page after scrolling settles
+    LaunchedEffect(pagerState.isScrollInProgress) {
+        if (!pagerState.isScrollInProgress && pagerState.currentPageOffsetFraction != 0f) {
+            // Wait a bit to see if more scrolling happens
+            delay(100)
+
+            if (!pagerState.isScrollInProgress) {
+                // Calculate nearest page
+                val currentOffset = pagerState.currentPageOffsetFraction
+                val targetPage =
+                        if (currentOffset.roundToInt() == 0) {
+                            pagerState.currentPage
+                        } else {
+                            pagerState.currentPage + currentOffset.roundToInt()
+                        }
+
+                // Snap to the target page
+                if (targetPage in 0 until steps.size) {
+                    pagerState.animateScrollToPage(targetPage)
+                }
+            }
+        }
     }
 
     // Show feedback when page changes
     LaunchedEffect(pagerState.currentPage) {
         if (pagerState.currentPage > 0 || pagerState.settledPage > 0) {
             showBezelFeedback = true
-            delay(800) // Show for 800ms
+            delay(800)
             showBezelFeedback = false
         }
     }
@@ -96,7 +122,7 @@ fun HomeScreen() {
             Column(
                     modifier =
                             Modifier.fillMaxSize()
-                                    .background(Color.Black) // Force dark background
+                                    .background(Color.Black)
                                     .padding(horizontal = 4.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
             ) {
@@ -119,20 +145,14 @@ fun HomeScreen() {
                         modifier =
                                 Modifier.weight(1f)
                                         .fillMaxWidth()
-                                        .focusRequester(focusRequester) // 1. Attach focus requester
-                                        .focusTarget() // 2. Make focusable
-                                        .rotaryWithScroll( // 3. Enable rotary input
+                                        .focusRequester(focusRequester)
+                                        .focusTarget()
+                                        .rotaryWithScroll(
                                                 scrollableState = pagerState,
                                                 focusRequester = focusRequester
                                         ),
                         pageSpacing = 0.dp,
-                        contentPadding = PaddingValues(0.dp),
-                        flingBehavior =
-                                PagerDefaults.flingBehavior(
-                                        state = pagerState,
-                                        snapPositionalThreshold =
-                                                0.2f // Snap when 20% of page visible
-                                )
+                        contentPadding = PaddingValues(0.dp)
                 ) { page -> RubiksCard(step = steps[page]) }
             }
 
@@ -141,7 +161,7 @@ fun HomeScreen() {
                     visible = showBezelFeedback,
                     enter = fadeIn(),
                     exit = fadeOut(),
-                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 4.dp)
+                    modifier = Modifier.align(Alignment.BottomCenter).padding(bottom = 6.dp)
             ) {
                 Box(
                         modifier =
@@ -155,7 +175,7 @@ fun HomeScreen() {
                                         .padding(horizontal = 12.dp, vertical = 6.dp)
                 ) {
                     Text(
-                            text = "🔄 Bezel Active",
+                            text = "🔄 Bezel",
                             style = MaterialTheme.typography.caption2,
                             color = MaterialTheme.colors.onPrimary,
                             fontWeight = FontWeight.Bold
